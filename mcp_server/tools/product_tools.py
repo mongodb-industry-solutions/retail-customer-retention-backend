@@ -1,8 +1,6 @@
-from mcp.server.fastmcp import FastMCP
+from mcp_server.server import mcp  # Import the single mcp instance shared across your project  
 from mongo import get_db
 from config import PRODUCTS_COLLECTION, VECTOR_INDEX_NAME
-
-mcp = FastMCP.current()
 
 @mcp.tool(
     name="vector_search_products",

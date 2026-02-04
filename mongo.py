@@ -6,5 +6,5 @@ _client = None
 def get_db():
     global _client
     if _client is None:
-        _client = MongoClient(MONGODB_URI)
+        _client = MongoClient(MONGODB_URI, tls=True, tlsAllowInvalidCertificates=True)
     return _client[DB_NAME]

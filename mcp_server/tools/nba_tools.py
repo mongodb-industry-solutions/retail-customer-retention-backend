@@ -1,9 +1,7 @@
-from mcp.server.fastmcp import FastMCP
+from mcp_server.server import mcp  # Import the single mcp instance shared across your project  
 from mongo import get_db
 from config import NEXT_BEST_ACTION_COLLECTION
 from datetime import datetime
-
-mcp = FastMCP.current()
 
 @mcp.tool(
     name="create_next_best_action",
