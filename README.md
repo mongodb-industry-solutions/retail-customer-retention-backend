@@ -103,4 +103,48 @@ retail-customer-retention-backend/
 └── voyageai_client.py          # VoyageAI embedding integration
 ```
 
+## Local Development Setup
+
+### Prerequisites
+
+- Python 3.12+ installed
+- MongoDB instance running (local or cloud)
+- AWS credentials configured for Bedrock access
+- VoyageAI API key
+
+### Environment Setup
+
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd retail-customer-retention-backend
+   ```
+
+2. **Create and activate virtual environment**
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+   ```
+
+3. **Install dependencies**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. **Configure environment variables**
+   Create a `.env` file in the root directory:
+   ```env
+        MONGODB_URI=
+        AWS_REGION=
+        AWS_ACCESS_KEY_ID=
+        AWS_SECRET_ACCESS_KEY=
+        VOYAGE_API_KEY=
+   ```
+
+### Running the Application
+
+1. **Start the application** (this starts both MCP server and change stream monitor)
+   ```bash
+   python main.py
+   ```
 
