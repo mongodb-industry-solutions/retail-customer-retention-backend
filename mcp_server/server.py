@@ -11,5 +11,6 @@ mcp = FastMCP(
 
 # Register tools
 import mcp_server.tools.session_tools
-import mcp_server.tools.product_tools
+import mcp_server.tools.product_search_tools  # Single consolidated file
 import mcp_server.tools.nba_tools
+import mcp_server.tools.discount_tools

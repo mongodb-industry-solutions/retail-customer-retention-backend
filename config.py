@@ -11,7 +11,11 @@ NEXT_BEST_ACTION_COLLECTION = "next_best_actions"
 
 # Vector search
 VECTOR_INDEX_NAME = "vs_index_vai_text_embeddings"
+SEARCH_INDEX_NAME = "search_index_products"
 EMBEDDING_FIELD = "vai_text_embedding"
+
+# VoyageAI
+VOYAGE_EMBEDDING_MODEL = "voyage-3-large"
 
 # AWS
 AWS_REGION = "us-east-1"

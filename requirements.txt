@@ -2,3 +2,4 @@ mcp
 pymongo
 boto3
 python-dotenv
+voyageai
