@@ -46,12 +46,14 @@
     │ VoyageAI    │ │ MongoDB     │ │ MongoDB     │ │ LLM         │
     │ Embeddings  │ │ Session     │ │ Next Best   │ │ Generated   │
     │             │ │ State       │ │ Actions     │ │ Content     │
-    │• Semantic   │ │ Collection  │ │ Collection  │ │             │
-    │  Search     │ │             │ │             │ │• Social     │
-    │• Vector     │ │• User       │ │• Discount   │ │  Proof      │
-    │  Similarity │ │  Intent     │ │  Offers     │ │• Product    │
-    │             │ │• Session    │ │• Product    │ │  Recomm.    │
-    │             │ │  Tracking   │ │  Recomm.    │ │• Urgency    │
+    │• Embedding  │ │ Collection  │ │ Collection  │ │             │
+    │  Models     │ │             │ │             │ │• UX Writing │
+    │• voyage-    │ │• User       │ │• Discount   │ │• Bedrock    │
+    │  3-large    │ │  Intent     │ │  Offers     │ │             │
+    │             │ │• Session    │ │• Product    │ │             │
+    │             │ │  Tracking   │ │  Recomm.    │ │             │
+    │             │ │             │ │             │ │             │
+    │             │ │             │ │             │ │             │
     └─────────────┘ └─────────────┘ └─────────────┘ └─────────────┘
                                           │
                                           │
