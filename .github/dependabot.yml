@@ -12,7 +12,7 @@ updates:
       - "dependencies"
       - "javascript"
     reviewers:
-      - "mongodb-industry-solutions/lst-techhub"
+      - "mongodb-industry-solutions/ist-techhub"
     commit-message:
       prefix: "chore"
       include: "scope"
