@@ -18,7 +18,7 @@ async def handle_signal(doc: dict):
         
         uid = doc.get("uid")
         sid = doc.get("sid")
-        id = doc.get("_id")
+        signal_id = doc.get("_id")
         logger.info(f"👤 Processing for user: {uid}, session: {sid}")
 
         if signal == "high-intent":
@@ -102,7 +102,7 @@ async def handle_signal(doc: dict):
                     "action": {
                         "uid": uid,
                         "sid": sid,
-                        "signalId": id,
+                        "signalId": signal_id,
                         "type": "social-proof-notification",
                         "actionMetadata": {
                             "title": notification["title"],
@@ -221,7 +221,7 @@ async def handle_signal(doc: dict):
                     "action": {
                         "uid": uid,
                         "sid": sid,
-                        "signalId": id,
+                        "signalId": signal_id,
                         "type": "delivery-discount",
                         "actionMetadata": {
                             "title": discount["title"],
