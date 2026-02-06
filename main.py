@@ -24,7 +24,7 @@ if __name__ == "__main__":
         
         # Start the MCP server
         logger.info("Starting MCP server...")
-        mcp.run()
+        mcp.run(host="0.0.0.0", port=8080)
         
     except Exception as e:
         logger.error(f"Failed to start application: {str(e)}", exc_info=True)

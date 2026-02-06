@@ -1,22 +1,24 @@
 FROM python:3.10-slim-buster
 
-ENV GET_POETRY_IGNORE_DEPRECATION=1
+# Set working directory
+WORKDIR /app
 
-WORKDIR /
+# Copy requirements first for better layer caching
+COPY requirements.txt .
 
-# Poetry dependencies
-COPY /backend/pyproject.toml /backend/poetry.lock ./
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Poetry installation
-RUN pip install poetry==1.8.4
+# Copy application code
+COPY . .
 
-# Poetry config & install dependencies
-RUN poetry config virtualenvs.in-project true
-RUN poetry lock --no-update
-RUN poetry install --no-interaction -v --no-cache --no-root
+# Create non-root user for security
+RUN groupadd -r appuser && useradd -r -g appuser appuser
+RUN chown -R appuser:appuser /app
+USER appuser
 
-COPY ./backend/ .
-
+# Expose port 8080 (required for Kanopy)
 EXPOSE 8080
 
-CMD ["poetry", "run", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
+# Start the application
+CMD ["python", "main.py"]

@@ -3,3 +3,5 @@ pymongo
 boto3
 python-dotenv
 voyageai
+uvicorn[standard]
+fastapi
