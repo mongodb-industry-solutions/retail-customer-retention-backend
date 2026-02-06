@@ -9,6 +9,12 @@ mcp = FastMCP(
     """
 )
 
+# Add health endpoint for Kanopy liveness checks
+@mcp.get("/")
+def health_check():
+    """Health check endpoint for Kanopy container liveness"""
+    return {"status": "healthy", "service": "retail-customer-retention-backend"}
+
 # Register tools
 import mcp_server.tools.session_tools
 import mcp_server.tools.product_search_tools  # Single consolidated file
