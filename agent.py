@@ -29,7 +29,7 @@ async def handle_signal(doc: dict):
             
             notification_raw = ask_llm(
                 f"""
-                You are a Marketing UX writter and want to create a compelling social proof message.
+                You are a Marketing UX writer and want to create a compelling social proof message.
                 The customer showed a {severity} purchase intent based on the following evidence '{evidence}'.
     
                 Make it engaging and persuasive.
