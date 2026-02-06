@@ -150,3 +150,25 @@ retail-customer-retention-backend/
    python main.py
    ```
 
+## Authors & Contributors
+
+### Lead Authors   
+
+[Rodrigo Leal](https://www.mongodb.com/blog/authors/rodrigo-leal) - Principal
+
+[Genevieve Broadhead](https://www.mongodb.com/blog/authors/genevieve-broadhead) - Global lead, retail solutions
+
+[Angie Guemes](https://www.mongodb.com/developer/author/angie-guemes-estrada/) – Developer & Maintainer 
+
+[Florencia Arin](https://www.mongodb.com/blog/authors/florencia-arin) – Developer & Maintainer 
+
+### Contributors  
+
+
+## License
+
+© 2025 MongoDB. All rights reserved.
+
+This repository is intended solely for demonstration and educational purposes.  
+No support or warranty is provided. Use at your own risk.
+.
