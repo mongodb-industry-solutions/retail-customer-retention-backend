@@ -150,8 +150,6 @@ retail-customer-retention-backend/
    python main.py
    ```
 
-<<<<<<< HEAD
-=======
 ## Authors & Contributors
 
 ### Lead Authors   
@@ -174,4 +172,3 @@ retail-customer-retention-backend/
 This repository is intended solely for demonstration and educational purposes.  
 No support or warranty is provided. Use at your own risk.
 .
->>>>>>> ec5d40da333fbb0f0c43092115f0d7ba672e99b7
