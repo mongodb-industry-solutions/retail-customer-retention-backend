@@ -5,7 +5,7 @@
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                    MongoDB Change Stream                        │
-│  - Watches session_state collection                             │
+│  - Watches session_signals collection                           │
 │  - Detects high-intent, search-friction, exit-risk signals      │
 └─────────────────────────┬───────────────────────────────────────┘
                           │
