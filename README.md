@@ -5,7 +5,7 @@
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                    MongoDB Change Stream                        │
-│  - Watches session_state collection                             │
+│  - Watches session_signals collection                           │
 │  - Detects high-intent, search-friction, exit-risk signals      │
 └─────────────────────────┬───────────────────────────────────────┘
                           │
@@ -150,3 +150,28 @@ retail-customer-retention-backend/
    python main.py
    ```
 
+<<<<<<< HEAD
+=======
+## Authors & Contributors
+
+### Lead Authors   
+
+[Rodrigo Leal](https://www.mongodb.com/blog/authors/rodrigo-leal) - Principal
+
+[Genevieve Broadhead](https://www.mongodb.com/blog/authors/genevieve-broadhead) - Global lead, retail solutions
+
+[Angie Guemes](https://www.mongodb.com/developer/author/angie-guemes-estrada/) – Developer & Maintainer 
+
+[Florencia Arin](https://www.mongodb.com/blog/authors/florencia-arin) – Developer & Maintainer 
+
+### Contributors  
+
+
+## License
+
+© 2025 MongoDB. All rights reserved.
+
+This repository is intended solely for demonstration and educational purposes.  
+No support or warranty is provided. Use at your own risk.
+.
+>>>>>>> ec5d40da333fbb0f0c43092115f0d7ba672e99b7
