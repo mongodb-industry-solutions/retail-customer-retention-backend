@@ -1,4 +1,4 @@
-> ⚠️ **WORK IN PROGRESS** - This repository is currently under active development and not yet ready for production use.
+> ⚠️ **WORK IN PROGRESS** - This repository is currently under active development and not yet ready for production use. 
 
 # Retail Customer Retention Backend
 
