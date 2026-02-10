@@ -4,10 +4,10 @@ from config import SESSION_STATE_COLLECTION, CUSTOMER_BEHAVIOR_COLLECTION
 import logging
 
 @mcp.tool(
-    name="get_session_intent",
+    name="get_session_search_history",
     description="Fetch search history (array of search query strings) for a session"
 )
-def get_session_intent(uid: str, sid: str) -> list:
+def get_session_search_history(uid: str, sid: str) -> list:
     logging.info("🔍 Fetching session search history")
     
     db = get_db()

@@ -84,8 +84,8 @@ class ProductDiscountAndRecommendationHandler(BaseNBAHandler):
         
         try:
             # Get search history from session_state collection
-            logger.info(f"📞 Calling get_session_intent for search history - uid: {uid}, sid: {sid}")
-            search_data = await mcp.call_tool("get_session_intent", {"uid": uid, "sid": sid})
+            logger.info(f"📞 Calling get_session_search_history for search history - uid: {uid}, sid: {sid}")
+            search_data = await mcp.call_tool("get_session_search_history", {"uid": uid, "sid": sid})
             
             # Handle potential MCP wrapper response for search history
             if isinstance(search_data, list) and len(search_data) > 0:
