@@ -2,14 +2,13 @@ from mcp_server.server import mcp  # Import the single mcp instance shared acros
 from mongo import get_db
 from config import PRODUCTS_COLLECTION, SEARCH_INDEX_NAME, VECTOR_INDEX_NAME, EMBEDDING_FIELD
 from voyageai_client import get_embedding  # For vector search
+from bson import ObjectId
 
 # Common projection for all search types
 PRODUCT_PROJECTION = {
     "name": 1,
-    "imageUrl": 1,
-    "description": 1,
-    "category": 1,
-    "price": 1,
+    "image.url": 1,
+    "masterCategory": 1,
     "articleType": 1,
     "subCategory": 1,
     "brand": 1
@@ -100,3 +99,29 @@ def search_products_by_sub_category(sub_category: str, text_filter: str = None, 
     ]
 
     return list(db[PRODUCTS_COLLECTION].aggregate(pipeline))
+
+@mcp.tool(
+    name="search_product_by_id",
+    description="Search for a specific product by its MongoDB ObjectId"
+)
+def search_product_by_id(product_id: str) -> dict:
+    """Search for a product by its _id field"""
+    db = get_db()
+    
+    try:
+        # Convert string ID to ObjectId
+        object_id = ObjectId(product_id)
+        
+        # Find the product by _id
+        result = db[PRODUCTS_COLLECTION].find_one(
+            {"_id": object_id},
+            PRODUCT_PROJECTION
+        )
+        
+        if result:
+            return result
+        else:
+            return {"error": f"No product found with ID: {product_id}"}
+            
+    except Exception as e:
+        return {"error": f"Invalid ObjectId format or database error: {str(e)}"}
