@@ -4,7 +4,7 @@ import os
 MONGODB_URI = os.environ["MONGODB_URI"]
 DB_NAME = "leafy_popup_store"
 
-CUSTOMER_BEHAVIOR_COLLECTION = "session_signals"
+SESSION_SIGNALS_COLLECTION = "session_signals"
 SESSION_STATE_COLLECTION = "session_state"
 PRODUCTS_COLLECTION = "products"
 NEXT_BEST_ACTION_COLLECTION = "next_best_actions"

@@ -1,7 +1,7 @@
 import logging
 import asyncio
 from mongo import get_db
-from config import CUSTOMER_BEHAVIOR_COLLECTION
+from config import SESSION_SIGNALS_COLLECTION
 from agent import handle_signal
 
 # Configure logging
@@ -18,8 +18,8 @@ def watch_customer_behavior():
         db = get_db()
         logger.info(f"✅ Successfully connected to database: {db.name}")
         
-        collection = db[CUSTOMER_BEHAVIOR_COLLECTION]
-        logger.info(f"🔍 Watching collection: {CUSTOMER_BEHAVIOR_COLLECTION}")
+        collection = db[SESSION_SIGNALS_COLLECTION]
+        logger.info(f"🔍 Watching collection: {SESSION_SIGNALS_COLLECTION}")
         
         # Check if collection exists and has documents
         doc_count = collection.count_documents({})

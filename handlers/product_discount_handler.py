@@ -86,18 +86,31 @@ class ProductDiscountAndRecommendationHandler(BaseNBAHandler):
             # Get search history from session_state collection
             logger.info(f"📞 Calling get_session_search_history for search history - uid: {uid}, sid: {sid}")
             search_data = await mcp.call_tool("get_session_search_history", {"uid": uid, "sid": sid})
-            
-            # Handle potential MCP wrapper response for search history
+
+            # Handle search history response - keep as array of strings
             if isinstance(search_data, list) and len(search_data) > 0:
-                # Check if first item is TextContent wrapper
-                first_item = search_data[0] 
-                if hasattr(first_item, 'text'):
-                    try:
-                        search_data = json.loads(first_item.text)
-                        logger.info(f"🔍 Parsed search data from TextContent: {search_data}")
-                    except json.JSONDecodeError:
-                        search_data = []
-                        logger.warning("⚠️ Failed to parse search data JSON, using empty list")
+                
+                # Extract strings from the list (handle TextContent objects if present)
+                if all(isinstance(item, str) for item in search_data):
+                    # Already strings, keep as is
+                    logger.info(f"🔍 Search history as strings: {search_data}")
+                else:
+                    # Convert TextContent objects to strings
+                    string_items = []
+                    for item in search_data:
+                        if isinstance(item, str):
+                            string_items.append(item)
+                        else:
+                            if hasattr(item, 'text'):
+                                string_items.append(item.text)  # Extract text content
+                            else:
+                                string_items.append(str(item))
+                    
+                    search_data = string_items
+                    logger.info(f"🔍 Converted search history: {search_data}")
+            else:
+                logger.info(f"🔍 No search history found or empty response")
+                search_data = []
             
             # Ensure search_data is a list of search query strings
             if isinstance(search_data, list):
@@ -107,23 +120,40 @@ class ProductDiscountAndRecommendationHandler(BaseNBAHandler):
                 logger.warning(f"⚠️ Search data is not a list, got {type(search_data)}, using empty list")
                 
         except Exception as e:
-            logger.error(f"❌ Error calling get_session_intent: {e}")
+            logger.error(f"❌ Error calling get_session_search_history: {e}")
             
         try:
             # Get past signals from session_signals collection  
             logger.info(f"📞 Calling get_session_signals for behavioral history - uid: {uid}, sid: {sid}")
             signals_data = await mcp.call_tool("get_session_signals", {"uid": uid, "sid": sid})
             
-            # Handle potential MCP wrapper response for signals
             if isinstance(signals_data, list) and len(signals_data) > 0:
                 # Check if it's wrapped in TextContent
                 if hasattr(signals_data[0], 'text'):
                     try:
-                        signals_data = json.loads(signals_data[0].text)
-                        logger.info(f"🔍 Parsed signals data from TextContent")
-                    except json.JSONDecodeError:
+                        parsed_signals = []
+                        
+                        # Iterate through ALL TextContent objects
+                        for i, text_content in enumerate(signals_data):
+                            if hasattr(text_content, 'text') and text_content.text:
+                                try:
+                                    signal_data = json.loads(text_content.text)
+                                    parsed_signals.append(signal_data)
+                                    logger.debug(f"🔍 Parsed signal {i+1}: {signal_data.get('_id', 'unknown')}")
+                                except json.JSONDecodeError as e:
+                                    logger.warning(f"⚠️ Failed to parse TextContent {i+1}: {e}")
+                                    continue
+                        
+                        signals_data = parsed_signals
+                        logger.info(f"🔍 Successfully parsed {len(signals_data)} signals from {len(signals_data)} TextContent objects")
+                        
+                    except Exception as e:
                         signals_data = []
-                        logger.warning("⚠️ Failed to parse signals data JSON, using empty list")
+                        logger.error(f"❌ Error processing TextContent objects: {e}")
+                else:
+                    logger.info(f"🔍 Direct list response (no TextContent wrapper)")
+            else:
+                logger.info(f"🔍 MCP response is not a list or is empty")
             
             # Ensure signals_data is a list
             if isinstance(signals_data, list):
@@ -191,6 +221,8 @@ class ProductDiscountAndRecommendationHandler(BaseNBAHandler):
             logger.warning("⚠️ No session context available for intent inference")
             return "General browsing intent"
         
+        logger.info(f"🔍 DEBUG - session_context: {session_context}")
+        
         prompt = f"""
         Given the following session context, what is the user most likely looking for?
 
@@ -233,7 +265,7 @@ class ProductDiscountAndRecommendationHandler(BaseNBAHandler):
             if "title" not in discount or "message" not in discount:
                 raise ValueError("Missing required fields: title or message")
                 
-            logger.info(f"✅ Parsed discount - Title: {discount['title']}, Message: {discount['message']}")
+            logger.info(f"✅ Parsed discount")
             return discount
             
         except (json.JSONDecodeError, ValueError, KeyError) as e:
@@ -305,13 +337,14 @@ class ProductDiscountAndRecommendationHandler(BaseNBAHandler):
         action = {
             "uid": signal_data["uid"],
             "sid": signal_data["sid"],
-            "signalId": signal_data["signal_id"],
             "type": "discount-product-recommendation",
             "actionMetadata": {
                 "title": discount_message["title"],
                 "message": discount_message["message"],
-                "productRecommendation": product_recommendations_array
-            }
+                "productRecommendation": product_recommendations_array,
+                "triggeredBySignal": f"{signal_data['severity']}_{signal_data['signal']}",
+            },
+            "deployment": "local"
         }
         
         result = await mcp.call_tool("create_next_best_action", {"action": action})

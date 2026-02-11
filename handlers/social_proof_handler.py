@@ -147,11 +147,11 @@ class SocialProofHandler(BaseNBAHandler):
         action = {
             "uid": signal_data["uid"],
             "sid": signal_data["sid"], 
-            "signalId": signal_data["signal_id"],
             "type": "social-proof-notification",
             "actionMetadata": {
                 "title": notification["title"],
-                "message": notification["message"]
+                "message": notification["message"],
+                "triggeredBySignal": f"{signal_data['severity']}_{signal_data['signal']}",
             }
         }
         
