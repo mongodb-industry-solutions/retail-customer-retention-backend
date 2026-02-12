@@ -17,6 +17,7 @@ The message should:
 - Be specific to a subcategory or article type
 - Create urgency and encourage action
 - Be concise and compelling
+- Keep message under 90 characters if possible, or maximum 115 characters.
 
 Output as JSON:
 {{
@@ -69,7 +70,7 @@ The message should:
 - Create urgency or social validation
 - Encourage immediate action
 - Should NOT include any discounts. But you can add analytics like amount of people interested in that category, etc...
-- Try to keep shorter than 25 words.
+- Keep message under 90 characters if possible, or maximum 115 characters.
 
 The title should be:
 - Short and attention-grabbing

@@ -267,7 +267,6 @@ class ProductDiscountAndRecommendationHandler(BaseNBAHandler):
                 "productRecommendation": product_recommendation if product_recommendation else None,
                 "triggeredBySignal": f"{signal_data['severity']}_{signal_data['signal']}",
             },
-            "deployment": "local"
         }
         
         result = await mcp.call_tool("create_next_best_action", {"action": action})
