@@ -4,6 +4,7 @@ from typing import Dict, Any
 from .base_handler import BaseNBAHandler
 from bedrock import ask_llm
 from mcp_server.server import mcp
+from prompts import SOCIAL_PROOF_MESSAGE_PROMPT, PRODUCT_PRESSURE_MESSAGE_PROMPT
 
 logger = logging.getLogger(__name__)
 
@@ -15,10 +16,32 @@ class SocialProofHandler(BaseNBAHandler):
         self.log_processing_start("high-intent", signal_data["uid"], signal_data["sid"])
         
         try:
+            # Get product data using MCP tool
+            high_intent_product = None
+            if signal_data.get("product_id"):
+                product_result = await mcp.call_tool("search_product_by_id", {"product_id": signal_data["product_id"]})
+                
+                # Parse the MCP tool response which returns TextContent objects
+                if product_result and isinstance(product_result, list) and len(product_result) > 0:
+                    # Extract JSON text from TextContent object
+                    text_content = product_result[0]
+                    if hasattr(text_content, 'text'):
+                        try:
+                            high_intent_product = json.loads(text_content.text)
+                            logger.info(f"Parsed product data: {high_intent_product}")
+                        except json.JSONDecodeError as e:
+                            logger.error(f"Failed to parse product JSON: {e}")
+                            high_intent_product = None
+                    else:
+                        logger.error(f"Unexpected MCP response format: {product_result}")
+                else:
+                    logger.warning(f"No product data returned for product_id: {signal_data['product_id']}")
+            
             # Generate social proof message using LLM
             notification = await self._generate_social_proof_message(
                 signal_data["evidence"], 
-                signal_data["severity"]
+                signal_data["severity"],
+                high_intent_product
             )
             
             # Create NBA
@@ -31,37 +54,21 @@ class SocialProofHandler(BaseNBAHandler):
             logger.error(f"Error processing high-intent signal: {str(e)}", exc_info=True)
             raise
     
-    async def _generate_social_proof_message(self, evidence: str, severity: str) -> Dict[str, str]:
+    async def _generate_social_proof_message(self, evidence: str, severity: str, high_intent_product: Dict[str, Any] = None) -> Dict[str, str]:
         """Generate social proof title and message using LLM"""
         
-        prompt = f"""
-        You are a Marketing UX writer and want to create a compelling social proof message.
-        The customer showed a {severity} purchase intent based on the following evidence '{evidence}'.
-
-        Make it engaging and persuasive.
-
-        Output:
-        - An object with the following format: {{ "title": "", "message": "" }}
-        - title: short title for the social proof notification
-        - message: short description for the social proof notification, take the subCategory provided inside the evidence to tailor this.
-
-        The message should:
-        - Be concise and compelling
-        - Create urgency or social validation
-        - Encourage immediate action
-        - Should NOT include any discounts. But you can add analytics like amount of people interested in that category, etc...
-        - Try to keep shorter than 25 words.
-
-        The title should be:
-        - Short and attention-grabbing
-        - For example: "Popular Right Now", "Good Choice", "[The category] are moving"
-
-        Example output:
-        {{
-            "title": "Popular pick!",
-            "message": "Five customers completed a purchase in Shoes recently. You're looking in the right place."
-        }}
-        """
+        product_info = ""
+        if high_intent_product and not high_intent_product.get("error"):
+            product_name = high_intent_product.get("name", "")
+            product_category = high_intent_product.get("subCategory", high_intent_product.get("articleType", ""))
+            product_type = high_intent_product.get("articleType", "")
+            product_info = f"Product details: {product_name} of type {product_type} in {product_category} category."
+        
+        prompt = SOCIAL_PROOF_MESSAGE_PROMPT.format(
+            severity=severity,
+            evidence=evidence,
+            product_info=product_info
+        )
         
         notification_raw = ask_llm(prompt)
         logger.info(f"Generated raw response: {notification_raw}")
@@ -111,24 +118,7 @@ class SocialProofHandler(BaseNBAHandler):
     async def _generate_product_pressure_message(self, product_id: str) -> str:
         """Generate pressure message for specific product using LLM"""
         
-        prompt = f"""
-        Generate a short, compelling pressure message to encourage purchase of a product.
-        
-        The message should create urgency or social pressure such as:
-        - "X people purchased this in the last Y days"
-        - "This item is trending"  
-        - "Only few units left"
-        - "High demand item"
-        - "Popular choice this week"
-        
-        Requirements:
-        - Keep it under 15 words
-        - Make it feel authentic and believable
-        - Create urgency without being pushy
-        - Don't mention specific numbers unless they sound realistic
-        
-        Just return the message text, no JSON formatting needed.
-        """
+        prompt = PRODUCT_PRESSURE_MESSAGE_PROMPT
         
         pressure_message = ask_llm(prompt)
         logger.info(f"Generated product pressure message: {pressure_message}")
@@ -147,11 +137,11 @@ class SocialProofHandler(BaseNBAHandler):
         action = {
             "uid": signal_data["uid"],
             "sid": signal_data["sid"], 
-            "signalId": signal_data["signal_id"],
             "type": "social-proof-notification",
             "actionMetadata": {
                 "title": notification["title"],
-                "message": notification["message"]
+                "message": notification["message"],
+                "triggeredBySignal": f"{signal_data['severity']}_{signal_data['signal']}",
             }
         }
         

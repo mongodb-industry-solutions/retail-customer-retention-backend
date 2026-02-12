@@ -76,11 +76,11 @@ class ShippingDiscountHandler(BaseNBAHandler):
         action = {
             "uid": signal_data["uid"],
             "sid": signal_data["sid"],
-            "signalId": signal_data["signal_id"], 
             "type": "shipping-discount",
             "actionMetadata": {
                 "title": discount_message["title"],
-                "message": discount_message["message"]
+                "message": discount_message["message"],
+                "triggeredBySignal": f"{signal_data['severity']}_{signal_data['signal']}",
             }
         }
         
