@@ -46,61 +46,6 @@ def vector_search_products(query: str, limit: int = 3) -> list:
     return list(db[PRODUCTS_COLLECTION].aggregate(pipeline))
 
 @mcp.tool(
-    name="text_search_products",
-    description="Text search for products using product names and descriptions - best for exact matches"
-)
-def text_search_products(query: str, limit: int = 3) -> list:
-    db = get_db()
-
-    pipeline = [
-        {
-            "$search": {
-                "index": SEARCH_INDEX_NAME,
-                "text": {
-                    "query": query,
-                    "path": ["name", "articleType", "subCategory", "brand"]
-                }
-            }
-        },
-        {"$limit": limit},
-        {
-            "$project": {
-                **PRODUCT_PROJECTION,
-                "score": {"$meta": "searchScore"}
-            }
-        }
-    ]
-
-    return list(db[PRODUCTS_COLLECTION].aggregate(pipeline))
-
-@mcp.tool(
-    name="search_products_by_sub_category",
-    description="Search products by sub-category with optional text filtering"
-)
-def search_products_by_sub_category(sub_category: str, text_filter: str = None, limit: int = 3) -> list:
-    db = get_db()
-
-    match_stage = {}  
-    
-    # Match subCategory using $eq (exact match)  
-    if sub_category:  
-        match_stage["subCategory"] = sub_category  # Exact match (case-sensitive unless normalized in the DB)  
-
-    # Use full-text search for text_filter  
-    if text_filter:  
-        match_stage["$text"] = {"$search": text_filter} 
-    
-    pipeline = [
-        {"$match": match_stage},
-        {"$limit": limit},
-        {
-            "$project": PRODUCT_PROJECTION
-        }
-    ]
-
-    return list(db[PRODUCTS_COLLECTION].aggregate(pipeline))
-
-@mcp.tool(
     name="search_product_by_id",
     description="Search for a specific product by its MongoDB ObjectId"
 )

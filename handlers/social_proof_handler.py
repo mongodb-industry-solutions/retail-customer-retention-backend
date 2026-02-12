@@ -4,6 +4,7 @@ from typing import Dict, Any
 from .base_handler import BaseNBAHandler
 from bedrock import ask_llm
 from mcp_server.server import mcp
+from prompts import SOCIAL_PROOF_MESSAGE_PROMPT, PRODUCT_PRESSURE_MESSAGE_PROMPT
 
 logger = logging.getLogger(__name__)
 
@@ -63,35 +64,11 @@ class SocialProofHandler(BaseNBAHandler):
             product_type = high_intent_product.get("articleType", "")
             product_info = f"Product details: {product_name} of type {product_type} in {product_category} category."
         
-        prompt = f"""
-        You are a Marketing UX writer and want to create a compelling social proof message.
-        The customer showed a {severity} purchase intent based on the following evidence '{evidence}'.
-        {product_info}
-
-        Make it engaging and persuasive.
-
-        Output:
-        - An object with the following format: {{ "title": "", "message": "" }}
-        - title: short title for the social proof notification
-        - message: short description for the social proof notification, take the Product details provided and the evidence to tailor this.
-
-        The message should:
-        - Be concise and compelling
-        - Create urgency or social validation
-        - Encourage immediate action
-        - Should NOT include any discounts. But you can add analytics like amount of people interested in that category, etc...
-        - Try to keep shorter than 25 words.
-
-        The title should be:
-        - Short and attention-grabbing
-        - For example: "Popular Right Now", "Good Choice", "[The category] are moving"
-
-        Example output:
-        {{
-            "title": "Popular pick!",
-            "message": "Five customers completed a purchase in Shoes recently. You're looking in the right place."
-        }}
-        """
+        prompt = SOCIAL_PROOF_MESSAGE_PROMPT.format(
+            severity=severity,
+            evidence=evidence,
+            product_info=product_info
+        )
         
         notification_raw = ask_llm(prompt)
         logger.info(f"Generated raw response: {notification_raw}")
@@ -141,24 +118,7 @@ class SocialProofHandler(BaseNBAHandler):
     async def _generate_product_pressure_message(self, product_id: str) -> str:
         """Generate pressure message for specific product using LLM"""
         
-        prompt = f"""
-        Generate a short, compelling pressure message to encourage purchase of a product.
-        
-        The message should create urgency or social pressure such as:
-        - "X people purchased this in the last Y days"
-        - "This item is trending"  
-        - "Only few units left"
-        - "High demand item"
-        - "Popular choice this week"
-        
-        Requirements:
-        - Keep it under 15 words
-        - Make it feel authentic and believable
-        - Create urgency without being pushy
-        - Don't mention specific numbers unless they sound realistic
-        
-        Just return the message text, no JSON formatting needed.
-        """
+        prompt = PRODUCT_PRESSURE_MESSAGE_PROMPT
         
         pressure_message = ask_llm(prompt)
         logger.info(f"Generated product pressure message: {pressure_message}")

@@ -4,6 +4,7 @@ from typing import Dict, Any
 from .base_handler import BaseNBAHandler
 from bedrock import ask_llm
 from mcp_server.server import mcp
+from prompts import DISCOUNT_MESSAGE_PROMPT, INTENT_INFERENCE_PROMPT
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +26,7 @@ class ProductDiscountAndRecommendationHandler(BaseNBAHandler):
     """
     
     async def process(self, signal_doc: Dict[str, Any]) -> Dict[str, Any]:
+        logger.info("🚀 Starting ProductDiscountAndRecommendationHandler.process")
         signal_data = self.extract_signal_data(signal_doc)
         self.log_processing_start("search-friction", signal_data["uid"], signal_data["sid"])
         
@@ -63,181 +65,82 @@ class ProductDiscountAndRecommendationHandler(BaseNBAHandler):
             raise
     
     async def _get_session_context(self, uid: str, sid: str) -> Dict[str, Any]:
-        """
-        Step 1: Retrieve comprehensive session context from multiple collections
+        """Retrieve session context from search history and behavioral signals"""
+        logger.info(f"📋 Getting session context for uid: {uid}, sid: {sid}")
         
-        Aggregates data from:
-        1. session_state.searchHistory - array of search query strings ["shoes", "running shoes"]
-        2. session_signals - past behavioral signals (high-intent, search-friction, etc.)
-        
-        This complete context allows LLMs to understand both:
-        - What specific terms the user has been searching for
-        - What behavioral patterns they've exhibited
-        
-        Returns: Combined context dict with searchHistory (array) and pastSignals (array)
-        """
-        
-        session_context = {
-            "searchHistory": [],  # Array of search query strings
-            "pastSignals": []
-        }
+        session_context = {"searchHistory": [], "pastSignals": []}
         
         try:
-            # Get search history from session_state collection
-            logger.info(f"📞 Calling get_session_search_history for search history - uid: {uid}, sid: {sid}")
             search_data = await mcp.call_tool("get_session_search_history", {"uid": uid, "sid": sid})
-
-            # Handle search history response - keep as array of strings
-            if isinstance(search_data, list) and len(search_data) > 0:
-                
-                # Extract strings from the list (handle TextContent objects if present)
-                if all(isinstance(item, str) for item in search_data):
-                    # Already strings, keep as is
-                    logger.info(f"🔍 Search history as strings: {search_data}")
-                else:
-                    # Convert TextContent objects to strings
-                    string_items = []
-                    for item in search_data:
-                        if isinstance(item, str):
-                            string_items.append(item)
-                        else:
-                            if hasattr(item, 'text'):
-                                string_items.append(item.text)  # Extract text content
-                            else:
-                                string_items.append(str(item))
-                    
-                    search_data = string_items
-                    logger.info(f"🔍 Converted search history: {search_data}")
-            else:
-                logger.info(f"🔍 No search history found or empty response")
-                search_data = []
-            
-            # Ensure search_data is a list of search query strings
-            if isinstance(search_data, list):
-                session_context["searchHistory"] = search_data
-                logger.info(f"✅ Retrieved search history: {len(search_data)} queries")
-            else:
-                logger.warning(f"⚠️ Search data is not a list, got {type(search_data)}, using empty list")
-                
+            session_context["searchHistory"] = self._parse_mcp_response(search_data, list)
         except Exception as e:
-            logger.error(f"❌ Error calling get_session_search_history: {e}")
+            logger.error(f"Error calling get_session_search_history: {e}")
             
         try:
-            # Get past signals from session_signals collection  
-            logger.info(f"📞 Calling get_session_signals for behavioral history - uid: {uid}, sid: {sid}")
             signals_data = await mcp.call_tool("get_session_signals", {"uid": uid, "sid": sid})
-            
-            if isinstance(signals_data, list) and len(signals_data) > 0:
-                # Check if it's wrapped in TextContent
-                if hasattr(signals_data[0], 'text'):
-                    try:
-                        parsed_signals = []
-                        
-                        # Iterate through ALL TextContent objects
-                        for i, text_content in enumerate(signals_data):
-                            if hasattr(text_content, 'text') and text_content.text:
-                                try:
-                                    signal_data = json.loads(text_content.text)
-                                    parsed_signals.append(signal_data)
-                                    logger.debug(f"🔍 Parsed signal {i+1}: {signal_data.get('_id', 'unknown')}")
-                                except json.JSONDecodeError as e:
-                                    logger.warning(f"⚠️ Failed to parse TextContent {i+1}: {e}")
-                                    continue
-                        
-                        signals_data = parsed_signals
-                        logger.info(f"🔍 Successfully parsed {len(signals_data)} signals from {len(signals_data)} TextContent objects")
-                        
-                    except Exception as e:
-                        signals_data = []
-                        logger.error(f"❌ Error processing TextContent objects: {e}")
-                else:
-                    logger.info(f"🔍 Direct list response (no TextContent wrapper)")
-            else:
-                logger.info(f"🔍 MCP response is not a list or is empty")
-            
-            # Ensure signals_data is a list
-            if isinstance(signals_data, list):
-                session_context["pastSignals"] = signals_data
-                logger.info(f"✅ Retrieved {len(signals_data)} past behavioral signals")
-            else:
-                logger.warning(f"⚠️ Signals data is not a list, got {type(signals_data)}")
-                
+            session_context["pastSignals"] = self._parse_mcp_response(signals_data, list)
         except Exception as e:
-            logger.error(f"❌ Error calling get_session_signals: {e}")
+            logger.error(f"Error calling get_session_signals: {e}")
             
-        logger.info(f"🔍 Complete session context assembled - Search history: {bool(session_context['searchHistory'])}, Past signals: {len(session_context['pastSignals'])}")
         return session_context
     
     async def _generate_discount_message(self, session_context: Dict[str, Any]) -> Dict[str, str]:
-        """
-        Step 2A: Generate discount message using LLM
+        """Generate discount message using LLM"""
+        logger.info("💰 Generating discount message")
         
-        Creates promotional text (title + message) based on the user's session data.
-        The LLM analyzes what the user has been browsing to create targeted 
-        discount offers specific to their interests (e.g. "10% off running shoes").
-        
-        Returns: {"title": "...", "message": "..."}
-        """
-        
-        prompt = f"""
-        Based on the following session context, generate a discount message:
-
-        Session Context: {session_context}
-
-        Generate:
-        1) A title
-        2) A message
-
-        The message should:
-        - Offer a discount (5-15%) or incentive
-        - Be specific to a subcategory or article type
-        - Create urgency and encourage action
-        - Be concise and compelling
-
-        Output as JSON:
-        {{
-            "title": "Brief attention-grabbing title",
-            "message": "Specific discount message with subcategory/article type"
-        }}
-        """
+        prompt = DISCOUNT_MESSAGE_PROMPT.format(session_context=session_context)
         
         discount_raw = ask_llm(prompt)
-        logger.info(f"Generated discount response: {discount_raw}")
-        
         return self._parse_discount_response(discount_raw)
     
     async def _infer_user_intent(self, session_context: Dict[str, Any]) -> str:
-        """
-        Step 2B: Infer what the user is looking for using LLM
+        """Infer what the user is looking for using algorithmic analysis + LLM"""
+        logger.info(f"🎯 Starting user intent inference with session context: {session_context}")
         
-        Analyzes session context to understand the user's shopping intent.
-        This creates a search query that will be used to find the most 
-        relevant product to recommend alongside the discount.
+        search_history = session_context.get("searchHistory", [])
+        past_signals = session_context.get("pastSignals", [])
         
-        Example output: "User is looking for running shoes for women, size 8-9"
-        """
-        
-        if not session_context:
-            logger.warning("⚠️ No session context available for intent inference")
+        # Only return early if we have NO useful data at all
+        if not search_history and not past_signals:
+            logger.info("❌ No search history or signals available")
             return "General browsing intent"
         
-        logger.info(f"🔍 DEBUG - session_context: {session_context}")
-        
-        prompt = f"""
-        Given the following session context, what is the user most likely looking for?
-
-        Session Context: {session_context}
-
-        Respond with:
-        - A concise intent summary  
-        - Relevant keywords or attributes that describe the intent
-
-        Keep your response focused and actionable for product search.
-        """
-        
-        intent_summary = ask_llm(prompt)
-        logger.info(f"🎯 Inferred intent: {intent_summary}")
-        return intent_summary
+        try:
+            patterns_raw = await mcp.call_tool("analyze_session_intent_patterns", {
+                "search_history": search_history,
+                "past_signals": past_signals
+            })
+            
+            patterns = self._parse_mcp_response(patterns_raw, dict)
+            
+            # Step 2: Create structured LLM prompt using analysis results
+            intent_insights = patterns.get('intent_insights', {})
+            prompt = INTENT_INFERENCE_PROMPT.format(
+                recent_focus=patterns.get('recent_focus', []),
+                search_clusters=patterns.get('search_clusters', []),
+                has_size_mentions=intent_insights.get('has_size_mentions', False),
+                dominant_topic_dimension=intent_insights.get('dominant_topic_dimension', ''),
+                behavioral_indicators=intent_insights.get('behavioral_indicators', [])
+            )
+            
+            # Step 3: Get LLM inference based on structured analysis
+            logger.info(f"🎯 Sending prompt to LLM:\n{prompt}")
+            intent_summary = ask_llm(prompt)
+            logger.info(f"🎯 Final intent summary: {intent_summary}")
+            
+            # Fallback to algorithmic recommendation if LLM fails
+            if not intent_summary or len(intent_summary.strip()) < 10:
+                fallback_query = patterns.get('recommended_search_query', '')
+                return fallback_query if fallback_query else "General browsing intent"
+            
+            return intent_summary
+            
+        except Exception as e:
+            logger.info(f"⚠️ Exception in intent inference: {e}")
+            # Fallback to simple recent search
+            if search_history:
+                return search_history[-1]
+            return "General browsing intent"
     
     def _parse_discount_response(self, discount_raw: Any) -> Dict[str, str]:
         """
@@ -246,6 +149,7 @@ class ProductDiscountAndRecommendationHandler(BaseNBAHandler):
         Handles various response formats (JSON string, dict, markdown blocks) 
         and provides fallback if parsing fails.
         """
+        logger.info("🔍 Parsing discount response")
         
         try:
             if isinstance(discount_raw, str):
@@ -278,61 +182,80 @@ class ProductDiscountAndRecommendationHandler(BaseNBAHandler):
             return fallback
     
     async def _get_product_recommendation(self, intent_summary: str) -> Dict[str, Any]:
-        """
-        Step 3: Get single product recommendation using vector search
-        
-        Uses the inferred user intent to find the most relevant product.
-        Only returns the top matching product to show alongside the discount.
-        
-        Returns: Single product dict with {productId, name, imageUrl} or empty dict
-        """
+        """Get single product recommendation using vector search"""
+        logger.info(f"🛍️ Getting product recommendation for intent: {intent_summary}")
         
         try:
             products = await mcp.call_tool("vector_search_products", {"query": intent_summary})
-            logger.info(f"📦 Found {len(products) if products else 0} products from search")
             
-            # Get only the first (most relevant) product 
             if products and isinstance(products, list) and len(products) > 0:
-                top_product = products[0]
+                top_product = self._parse_mcp_response(products[0])
+                
                 if isinstance(top_product, dict):
                     formatted_product = {
                         "productId": top_product.get("_id", ""),
                         "name": top_product.get("name", ""), 
-                        "imageUrl": top_product.get("imageUrl", "")
+                        "imageUrl": top_product.get("image", {}).get("url", "") if isinstance(top_product.get("image"), dict) else ""
                     }
-                    logger.info(f"✅ Selected product recommendation: {formatted_product['name']}")
                     return formatted_product
-                else:
-                    logger.warning("Top product is not a valid dict")
-                    return {}
-            else:
-                logger.warning("No products found or empty response")
-                return {}
+            return {}
                 
         except Exception as e:
-            logger.error(f"❌ Error getting product recommendation: {e}")
+            logger.error(f"Error getting product recommendation: {e}")
             return {}
     
-    async def _create_discount_product_nba(
-        self, 
-        signal_data: Dict[str, Any], 
-        discount_message: Dict[str, str],
-        product_recommendation: Dict[str, Any]
-    ) -> Dict[str, Any]:
-        """
-        Step 4: Create the final NBA combining discount + product recommendation
-        
-        Builds the NBA document that will be stored in the database and consumed 
-        by the frontend to display the discount offer with a recommended product.
-        
-        NBA structure follows the specification:
-        - type: "discount-product-recommendation"  
-        - actionMetadata: contains display elements (title, message, product)
-        """
-        
-        # Build the productRecommendation array for the NBA
-        # If we have a product, include it; otherwise use empty array
-        product_recommendations_array = [product_recommendation] if product_recommendation else []
+    def _parse_mcp_response(self, response, expected_type=None):
+        """Helper to parse MCP TextContent responses"""
+        logger.info(f"🔧 Parsing MCP response: {response}")
+        if hasattr(response, 'text'):
+            try:
+                import json
+                return json.loads(response.text)
+            except (json.JSONDecodeError, AttributeError) as e:
+                logger.info(f"⚠️ Exception parsing response.text: {e}")
+                return expected_type() if expected_type else response.text
+        elif isinstance(response, list) and response and hasattr(response[0], 'text'):
+            # Handle list of TextContent objects - parse ALL of them
+            parsed_list = []
+            json_failed = False
+            
+            for item in response:
+                if hasattr(item, 'text') and item.text:
+                    try:
+                        import json
+                        # Try JSON parsing first
+                        parsed_item = json.loads(item.text)
+                        parsed_list.append(parsed_item)
+                    except (json.JSONDecodeError, AttributeError):
+                        # If JSON fails, use raw text (for search queries like "cream")
+                        parsed_list.append(item.text)
+                        json_failed = True
+            
+            if json_failed:
+                logger.info(f"📝 Parsed {len(parsed_list)} plain text items from TextContent list")
+            else:
+                logger.info(f"📋 Parsed {len(parsed_list)} JSON items from TextContent list")
+            
+            # Use expected_type to determine return format
+            if expected_type == dict and len(parsed_list) == 1:
+                logger.info("🎯 Expected dict + single item - returning dict directly") 
+                return parsed_list[0]
+            elif expected_type == list:
+                logger.info(f"📊 Expected list - returning list of {len(parsed_list)} items")
+                return parsed_list
+            else:
+                # No expected_type provided, use smart default
+                if len(parsed_list) == 1:
+                    logger.info("🎯 No expected_type + single item - returning dict directly")
+                    return parsed_list[0]
+                else:
+                    logger.info(f"📊 No expected_type + multiple items - returning list of {len(parsed_list)} items")
+                    return parsed_list
+        return response if response is not None else (expected_type() if expected_type else "")
+    
+    async def _create_discount_product_nba(self, signal_data: Dict[str, Any], discount_message: Dict[str, str], product_recommendation: Dict[str, Any]) -> Dict[str, Any]:
+        """Create the final NBA combining discount + product recommendation"""
+        logger.info("📝 Creating discount-product NBA")
         
         action = {
             "uid": signal_data["uid"],
@@ -341,7 +264,7 @@ class ProductDiscountAndRecommendationHandler(BaseNBAHandler):
             "actionMetadata": {
                 "title": discount_message["title"],
                 "message": discount_message["message"],
-                "productRecommendation": product_recommendations_array,
+                "productRecommendation": product_recommendation if product_recommendation else None,
                 "triggeredBySignal": f"{signal_data['severity']}_{signal_data['signal']}",
             },
             "deployment": "local"
