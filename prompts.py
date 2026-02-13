@@ -70,11 +70,7 @@ The message should:
 - Create urgency or social validation
 - Encourage immediate action
 - Should NOT include any discounts. But you can add analytics like amount of people interested in that category, etc...
-<<<<<<< HEAD
 - Keep message under 90 characters if possible, or maximum 115 characters.
-=======
-- Try to keep shorter than 25 words.
->>>>>>> 39b7b365a914a716c0c517576535999a8ad49aaf
 
 The title should be:
 - Short and attention-grabbing
