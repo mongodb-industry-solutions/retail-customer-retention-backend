@@ -2,8 +2,7 @@
 # https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
 
 # Dependency files
-package.json @Alberthor47 @AngelicaGE @floarin @mongodb-industry-solutions/lst-techhub
-package-lock.json @Alberthor47 @AngelicaGE @floarin @mongodb-industry-solutions/lst-techhub
+requirements.txt @Alberthor47 @AngelicaGE @floarin @mongodb-industry-solutions/ist-techhub
 
 # Dependabot configuration
 .github/dependabot.yml @Alberthor47 @AngelicaGE @floarin
