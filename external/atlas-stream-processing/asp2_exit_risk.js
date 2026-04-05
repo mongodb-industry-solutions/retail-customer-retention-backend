@@ -7,9 +7,7 @@
       },
       "connectionName": "retail_customer_retention",
       "db": "leafy_popup_store",
-      "timeField": {
-        "$toDate": "$fullDocument.last10s.window.end"
-      }
+      "timeField": "$fullDocument.lastSeen"
     }
   },
   {
@@ -22,7 +20,7 @@
       "last10s.lastEvent.event": {
         "$type": "string"
       },
-      "last10s.window.end": {
+      "lastSeen": {
         "$exists": true
       },
       "sessionId": {
@@ -35,7 +33,10 @@
   },
   {
     "$tumblingWindow": {
-      "allowedLateness": 0,
+      "allowedLateness": {
+        "size": 30,
+        "unit": "second"
+      },
       "boundary": "eventTime",
       "idleTimeout": 0,
       "interval": {
@@ -51,7 +52,7 @@
             },
             "snapshots": {
               "$push": {
-                "end": "$last10s.window.end",
+                "end": "$lastSeen",
                 "lastEvent": "$last10s.lastEvent.event"
               }
             },
@@ -97,7 +98,7 @@
     "$addFields": {
       "ts": {
         "$ifNull": [
-          "$_stream_meta.window.end",
+          "$_tsFallback",
           "$_tsFallback"
         ]
       }

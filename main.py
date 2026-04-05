@@ -31,6 +31,7 @@ def health():
 if __name__ == "__main__":
     logger.info("Starting retail customer retention backend...")
     
+    import os
     try:
         # Start the change stream watcher in a separate thread
         logger.info("Starting change stream watcher thread...")
@@ -39,8 +40,9 @@ if __name__ == "__main__":
         logger.info("Change stream thread started successfully")
         
         # Start the FastAPI server (includes HTTP endpoints for Kanopy)
-        logger.info("Starting FastAPI server on port 8080...")
-        uvicorn.run(app, host="0.0.0.0", port=8080)
+        port = int(os.environ.get("PORT", 8081))
+        logger.info(f"Starting FastAPI server on port {port}...")
+        uvicorn.run(app, host="0.0.0.0", port=port)
         
     except Exception as e:
         logger.error(f"Failed to start application: {str(e)}", exc_info=True)

@@ -7,9 +7,7 @@
       },
       "connectionName": "retail_customer_retention",
       "db": "leafy_popup_store",
-      "timeField": {
-        "$toDate": "$fullDocument.last10s.window.end"
-      }
+      "timeField": "$fullDocument.lastSeen"
     }
   },
   {
@@ -28,7 +26,7 @@
       "last10s.intent.subCategories": {
         "$type": "array"
       },
-      "last10s.window.end": {
+      "lastSeen": {
         "$exists": true
       },
       "sessionId": {
@@ -41,7 +39,10 @@
   },
   {
     "$tumblingWindow": {
-      "allowedLateness": 0,
+      "allowedLateness": {
+        "size": 30,
+        "unit": "second"
+      },
       "boundary": "eventTime",
       "idleTimeout": 0,
       "interval": {
@@ -58,9 +59,9 @@
             "snapshots": {
               "$push": {
                 "articleTypes": "$last10s.intent.articleTypes",
-                "end": "$last10s.window.end",
+                "end": "$lastSeen",
                 "products": "$last10s.intent.products",
-                "start": "$last10s.window.start",
+                "start": "$firstSeen",
                 "subCategories": "$last10s.intent.subCategories"
               }
             },
@@ -100,7 +101,7 @@
     "$addFields": {
       "ts": {
         "$ifNull": [
-          "$_stream_meta.window.end",
+          "$_tsFallback",
           "$_tsFallback"
         ]
       }

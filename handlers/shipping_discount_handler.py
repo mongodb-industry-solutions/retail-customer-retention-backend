@@ -13,12 +13,19 @@ class ShippingDiscountHandler(BaseNBAHandler):
         signal_data = self.extract_signal_data(signal_doc)
         self.log_processing_start("exit-risk", signal_data["uid"], signal_data["sid"])
         
+        conversation_log = []
+        
         try:
             # Use MCP tool for consistency
             discount_message = await self._get_discount_message(signal_data["severity"])
+            conversation_log.append({
+                "step": "discount_generation",
+                "description": f"Generated shipping discount for {signal_data['severity']} exit-risk",
+                "data": discount_message
+            })
             
             # Create NBA
-            result = await self._create_shipping_discount_nba(signal_data, discount_message)
+            result = await self._create_shipping_discount_nba(signal_data, discount_message, conversation_log)
             
             self.log_processing_complete("exit-risk")
             return result
@@ -69,7 +76,8 @@ class ShippingDiscountHandler(BaseNBAHandler):
     async def _create_shipping_discount_nba(
         self, 
         signal_data: Dict[str, Any], 
-        discount_message: Dict[str, str]
+        discount_message: Dict[str, str],
+        conversation_log: list = None
     ) -> Dict[str, Any]:
         """Create shipping discount NBA"""
         
@@ -83,6 +91,9 @@ class ShippingDiscountHandler(BaseNBAHandler):
                 "triggeredBySignal": f"{signal_data['severity']}_{signal_data['signal']}",
             }
         }
+        
+        if conversation_log:
+            action["agentConversation"] = conversation_log
         
         result = await mcp.call_tool("create_next_best_action", {"action": action})
         logger.info(f"✅ Created shipping discount NBA result: {result}")

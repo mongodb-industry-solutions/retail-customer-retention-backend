@@ -1,17 +1,31 @@
-import voyageai
 import os
+import requests
 from config import VOYAGE_EMBEDDING_MODEL
 
-# Initialize VoyageAI client
+# MongoDB Atlas AI endpoint configuration
 _api_key = os.environ.get("VOYAGE_API_KEY")
+_api_url = os.environ.get("VOYAGE_API_URL", "https://ai.mongodb.com/v1/embeddings")
+
 if not _api_key:
     raise RuntimeError(
         "VOYAGE_API_KEY environment variable is not set. "
-        "Set VOYAGE_API_KEY to your VoyageAI API key before using embeddings."
+        "Set VOYAGE_API_KEY to your MongoDB Atlas API key before using embeddings."
     )
-_client = voyageai.Client(api_key=_api_key)
 
 def get_embedding(text: str, input_type: str = "document") -> list:
-    """Generate embeddings using VoyageAI"""
-    result = _client.embed([text], model=VOYAGE_EMBEDDING_MODEL, input_type=input_type)
-    return result.embeddings[0]
+    """Generate embeddings using MongoDB Atlas AI endpoint"""
+    response = requests.post(
+        _api_url,
+        json={
+            "model": VOYAGE_EMBEDDING_MODEL,
+            "input": text,
+        },
+        headers={
+            "Authorization": f"Bearer {_api_key}",
+            "Content-Type": "application/json",
+        },
+        timeout=10,
+    )
+    response.raise_for_status()
+    data = response.json()
+    return data["data"][0]["embedding"]
