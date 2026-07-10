@@ -162,9 +162,6 @@ retail-customer-retention-backend/
 
 [Florencia Arin](https://www.mongodb.com/blog/authors/florencia-arin) – Developer & Maintainer 
 
-### Contributors  
-
-
 ## License
 
 © 2025 MongoDB. All rights reserved.
