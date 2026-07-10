@@ -1,0 +1,41 @@
+# Git and version control
+.git
+.gitignore
+
+# Virtual environments
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Development files
+.env
+.DS_Store
+*.log
+
+# CI/CD and documentation
+.github/
+cicd-kanopy/
+README.md
+LICENSE
+SECURITY_CHECK_README.md
+
+# Security and scripts
+security_check.sh
+
+# Docker files
+Dockerfile*
+.dockerignore
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Test files
+tests/
+test_*
+*_test.py

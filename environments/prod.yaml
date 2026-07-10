@@ -1,0 +1,22 @@
+env:
+  NODE_ENV: production
+
+envSecrets:
+  MONGODB_URI: retail-customer-retention-backend
+  AWS_REGION: retail-customer-retention-backend
+  VOYAGE_API_KEY: retail-customer-retention-backend
+
+# Optional: Service account for AWS role integration  
+serviceAccount:
+  enabled: true
+  irsa:
+    accountId: "275662791714"
+    roleName: "kanopy-prod-cicd-irsa"
+
+# Kanopy security and ownership (requires web-app chart v4.30.0+)
+security:
+  dataClassification: "Internal"
+  dataDesignation: ["MI"]
+
+ownership:
+  driEmail: angie.guemes@mongodb.com
