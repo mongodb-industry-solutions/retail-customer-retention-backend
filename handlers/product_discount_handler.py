@@ -30,6 +30,9 @@ class ProductDiscountAndRecommendationHandler(BaseNBAHandler):
         signal_data = self.extract_signal_data(signal_doc)
         self.log_processing_start("search-friction", signal_data["uid"], signal_data["sid"])
         
+        # Collect agent conversation steps for storage
+        conversation_log = []
+        
         try:
             # Step 1: Get session context (browsing behavior, search queries, intent data)
             # This will return session_context["searchHistory"] and session_context["pastSignals"]
@@ -37,24 +40,48 @@ class ProductDiscountAndRecommendationHandler(BaseNBAHandler):
                 signal_data["uid"], 
                 signal_data["sid"]
             )
+            conversation_log.append({
+                "step": "session_context",
+                "description": "Retrieved session browsing context",
+                "data": {
+                    "searchHistory": session_context.get("searchHistory", []),
+                    "signalCount": len(session_context.get("pastSignals", []))
+                }
+            })
             
             # Step 2A: Generate discount message based on session context
             # This creates the discount offer text shown to the user
             discount_message = await self._generate_discount_message(session_context)
+            conversation_log.append({
+                "step": "discount_generation",
+                "description": "LLM generated discount offer",
+                "data": discount_message
+            })
             
             # Step 2B: Infer user intent for product search
             # This analyzes the context to understand what the user is actually looking for
             intent_summary = await self._infer_user_intent(session_context)
+            conversation_log.append({
+                "step": "intent_inference",
+                "description": "LLM inferred user shopping intent",
+                "data": {"intentSummary": intent_summary[:500] if intent_summary else ""}
+            })
             
             # Step 3: Get single product recommendation using inferred intent
             # This finds the most relevant product to recommend based on the intent summary
             product_recommendation = await self._get_product_recommendation(intent_summary)
+            conversation_log.append({
+                "step": "product_recommendation",
+                "description": "Vector search found matching product",
+                "data": product_recommendation if product_recommendation else {"result": "none"}
+            })
             
             # Step 4: Create the NBA combining discount + product recommendation
             result = await self._create_discount_product_nba(
                 signal_data, 
                 discount_message, 
-                product_recommendation
+                product_recommendation,
+                conversation_log
             )
             
             self.log_processing_complete("search-friction")
@@ -253,7 +280,7 @@ class ProductDiscountAndRecommendationHandler(BaseNBAHandler):
                     return parsed_list
         return response if response is not None else (expected_type() if expected_type else "")
     
-    async def _create_discount_product_nba(self, signal_data: Dict[str, Any], discount_message: Dict[str, str], product_recommendation: Dict[str, Any]) -> Dict[str, Any]:
+    async def _create_discount_product_nba(self, signal_data: Dict[str, Any], discount_message: Dict[str, str], product_recommendation: Dict[str, Any], conversation_log: list = None) -> Dict[str, Any]:
         """Create the final NBA combining discount + product recommendation"""
         logger.info("📝 Creating discount-product NBA")
         
@@ -268,6 +295,10 @@ class ProductDiscountAndRecommendationHandler(BaseNBAHandler):
                 "triggeredBySignal": f"{signal_data['severity']}_{signal_data['signal']}",
             },
         }
+        
+        # Store the agent conversation/reasoning chain for UI display
+        if conversation_log:
+            action["agentConversation"] = conversation_log
         
         result = await mcp.call_tool("create_next_best_action", {"action": action})
         logger.info(f"✅ Created discount-product NBA result: {result}")

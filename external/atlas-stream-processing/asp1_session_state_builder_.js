@@ -135,7 +135,10 @@
   },
   {
     "$tumblingWindow": {
-      "allowedLateness": 0,
+      "allowedLateness": {
+        "size": 10,
+        "unit": "second"
+      },
       "boundary": "eventTime",
       "interval": {
         "size": 10,
@@ -236,8 +239,7 @@
           "$addFields": {
             "last10s": {
               "intent": "$_computed.intent",
-              "lastEvent": "$lastEvent",
-              "window": "$_stream_meta.window"
+              "lastEvent": "$lastEvent"
             },
             "sessionTotalsDelta": {
               "eventCounts": "$_computed.eventCounts",
@@ -255,6 +257,11 @@
           ]
         }
       ]
+    }
+  },
+  {
+    "$addFields": {
+      "last10s.window": "$_stream_meta.window"
     }
   },
   {

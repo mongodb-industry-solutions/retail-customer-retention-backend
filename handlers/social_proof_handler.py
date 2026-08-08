@@ -15,6 +15,8 @@ class SocialProofHandler(BaseNBAHandler):
         signal_data = self.extract_signal_data(signal_doc)
         self.log_processing_start("high-intent", signal_data["uid"], signal_data["sid"])
         
+        conversation_log = []
+        
         try:
             # Get product data using MCP tool
             high_intent_product = None
@@ -37,15 +39,26 @@ class SocialProofHandler(BaseNBAHandler):
                 else:
                     logger.warning(f"No product data returned for product_id: {signal_data['product_id']}")
             
+            conversation_log.append({
+                "step": "product_lookup",
+                "description": "Looked up high-intent product",
+                "data": {"productId": signal_data.get("product_id"), "found": high_intent_product is not None}
+            })
+            
             # Generate social proof message using LLM
             notification = await self._generate_social_proof_message(
                 signal_data["evidence"], 
                 signal_data["severity"],
                 high_intent_product
             )
+            conversation_log.append({
+                "step": "social_proof_generation",
+                "description": "LLM generated social proof notification",
+                "data": notification
+            })
             
             # Create NBA
-            result = await self._create_social_proof_nba(signal_data, notification)
+            result = await self._create_social_proof_nba(signal_data, notification, conversation_log)
             
             self.log_processing_complete("high-intent")
             return result
@@ -131,7 +144,7 @@ class SocialProofHandler(BaseNBAHandler):
             # Fallback message
             return "Trending item"
     
-    async def _create_social_proof_nba(self, signal_data: Dict[str, Any], notification: Dict[str, str]) -> Dict[str, Any]:
+    async def _create_social_proof_nba(self, signal_data: Dict[str, Any], notification: Dict[str, str], conversation_log: list = None) -> Dict[str, Any]:
         """Create social proof NBA"""
         
         action = {
@@ -152,6 +165,15 @@ class SocialProofHandler(BaseNBAHandler):
                 "productId": signal_data["product_id"],
                 "message": pressure_message
             }
+            if conversation_log is not None:
+                conversation_log.append({
+                    "step": "product_pressure",
+                    "description": "LLM generated product pressure message",
+                    "data": {"productId": signal_data["product_id"], "message": pressure_message}
+                })
+        
+        if conversation_log:
+            action["agentConversation"] = conversation_log
         
         result = await mcp.call_tool("create_next_best_action", {"action": action})
         logger.info(f"✅ Created social proof NBA result: {result}")
