@@ -86,7 +86,7 @@ retail-customer-retention-backend/
 ├── README.md                    # Project documentation
 ├── __pycache__/                # Python bytecode cache
 ├── agent.py                     # Agent implementation
-├── bedrock.py                   # AWS Bedrock integration
+├── llm_client.py                # LLM client
 ├── change_stream.py             # Database change stream handler
 ├── config.py                    # Configuration management
 ├── main.py                      # Application entry point
@@ -111,7 +111,7 @@ retail-customer-retention-backend/
 
 - Python 3.12+ installed
 - MongoDB instance running (local or cloud)
-- AWS credentials configured for Bedrock access
+- LLM gateway API key and base URL
 - VoyageAI API key
 
 ### Environment Setup
@@ -136,11 +136,11 @@ retail-customer-retention-backend/
 4. **Configure environment variables**
    Create a `.env` file in the root directory:
    ```env
-        MONGODB_URI=
-        AWS_REGION=
-        AWS_ACCESS_KEY_ID=
-        AWS_SECRET_ACCESS_KEY=
-        VOYAGE_API_KEY=
+            MONGODB_URI=
+            LLM_API_KEY=
+            LLM_BASE_URL=https://ai-gateway.corp.mongodb.com/anthropic
+            LLM_MODEL=claude-opus-4-7
+            VOYAGE_API_KEY=
    ```
 
 ### Running the Application

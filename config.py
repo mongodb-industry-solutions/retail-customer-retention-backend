@@ -17,6 +17,7 @@ EMBEDDING_FIELD = "vai_text_embedding"
 # VoyageAI
 VOYAGE_EMBEDDING_MODEL = "voyage-3-large"
 
-# AWS
-AWS_REGION = "us-east-1"
-BEDROCK_MODEL_ID = "anthropic.claude-3-haiku-20240307-v1:0"
+# LLM
+LLM_API_KEY = os.environ["LLM_API_KEY"]
+LLM_BASE_URL = os.environ["LLM_BASE_URL"]
+LLM_MODEL = os.environ["LLM_MODEL"]
