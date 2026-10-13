@@ -2,7 +2,7 @@ import logging
 import json
 from typing import Dict, Any
 from .base_handler import BaseNBAHandler
-from bedrock import ask_llm
+from llm_client import ask_llm
 from mcp_server.server import mcp
 from prompts import DISCOUNT_MESSAGE_PROMPT, INTENT_INFERENCE_PROMPT
 
