@@ -1,6 +1,6 @@
 # Retail Customer Retention Backend
 
-## Architecture Diagram
+## Architecture Diagram.
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
