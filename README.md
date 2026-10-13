@@ -138,8 +138,8 @@ retail-customer-retention-backend/
    ```env
             MONGODB_URI=
             LLM_API_KEY=
-            LLM_BASE_URL=https://ai-gateway.corp.mongodb.com/anthropic
-            LLM_MODEL=claude-opus-4-7
+            LLM_BASE_URL=
+            LLM_MODEL=
             VOYAGE_API_KEY=
    ```
 

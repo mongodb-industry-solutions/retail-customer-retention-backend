@@ -3,7 +3,9 @@ env:
 
 envSecrets:
   MONGODB_URI: retail-customer-retention-backend
-  AWS_REGION: retail-customer-retention-backend
+  LLM_API_KEY: retail-customer-retention-backend
+  LLM_BASE_URL: retail-customer-retention-backend
+  LLM_MODEL: retail-customer-retention-backend
   VOYAGE_API_KEY: retail-customer-retention-backend
 
 # Optional: Service account for AWS role integration
